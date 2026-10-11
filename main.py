@@ -1,23 +1,23 @@
-import streamlit as st, dashboard_page, budget_page, expense_page
+import streamlit as st
+import dashboard_page, budget_page, expense_page
 
-st.set_page_config(
-    page_title="Budget Buddy",
-    page_icon="💸",
-    layout="wide"
-)
+def main():
+    st.set_page_config(page_title="Budget Buddy", page_icon="💸", layout="centered")
+    
+    st.title("MyMoney - Budget Buddy", tesct_alignment="center")
 
-st.sidebar.title("Budget Buddy")
-st.sidebar.markdown("Test")
+    tab1, tab2, tab3 = st.tabs(["Dashboard", "Budget Planner", "Expense Tracker"])
+    
+    with tab1:
+        dashboard_page.show()
+        
+    with tab2:
+        budget_page.show()
+        
+    with tab3:
+        expense_page.show()
 
-navigation = st.sidebar.radio("Navigation", ["Dashboard", "Records", "Budgets", "Analysis"] )
+main()
 
-if navigation == "Dashboard":
-    dashboard_page.show()
-elif navigation == "Budgets":
-    budget_page.show()
-elif navigation == "Records":
-    expense_page.show()
-elif navigation == "Analysis":
-    st.title("Analysis")
-    st.write("Pie charts and percentages ")
+#https://docs.streamlit.io/develop/api-reference/layout/st.tabs
 

@@ -16,11 +16,13 @@ def init_expense_categories():
                 existing_names.append(cat_name.lower())
 
 def show():
-    st.title("Expense Tracker")
+    st.title("Expense Tracker", text_alignment="center")
     
     init_expense_categories()
     
-    st.subheader("Record New Expense")
+    st.subheader("Record New Expense", text_alignment="center")
+
+    st.write("---")
     
     col_date, col_month, col_year = st.columns([2, 2, 2])
     
@@ -43,8 +45,10 @@ def show():
     amount = col_amt.number_input("Amount (₱)", min_value=0.0, value=0.0, step=50.0)
     
     description = st.text_input("Description")
+
+    st.write("---")
     
-    if st.button("Save Expense"):
+    if st.button("Save Expense", text_alignment="right"):
         if amount <= 0:
             st.error("Error: Expense amount must be greater than 0.")
         elif not description.strip():
