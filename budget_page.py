@@ -6,28 +6,30 @@ def init_categories():
         st.session_state.categories = [
             "Food", "Transportation", "Utilities", "Savings", "Entertainment", "Miscellaneous"
         ]
-        
+
         saved_budgets = data_loader.load_budget_data()
-        existing_names = [cat.lower() for cat in st.session_state.categories]
         
-        for entry in saved_budgets:
-            cat_name = entry["category"]
-            if cat_name.lower() not in existing_names:
-                st.session_state.categories.append(cat_name)
-                existing_names.append(cat_name.lower())
+        if saved_budgets:
+            existing_names = [cat.lower() for cat in st.session_state.categories]
+            for entry in saved_budgets:
+                cat_name = entry["category"]
+                
+                if cat_name.lower() not in existing_names:
+                    st.session_state.categories.append(cat_name)
+                    existing_names.append(cat_name.lower())
 
 def show():
     st.title("Monthly Budget Setup")
     
     init_categories()
-    
+
     months = ["January", "February", "March", "April", "May", "June", 
               "July", "August", "September", "October", "November", "December"]
     years = ["2026", "2027", "2028", "2029", "2030"]
     
-    col_m, col_y = st.columns(2)
-    selected_month = col_m.selectbox("Select Month", months)
-    selected_year = col_y.selectbox("Select Year", years)
+    col1, col2 = st.columns(2)
+    selected_month = col1.selectbox("Select Month", months)
+    selected_year = col2.selectbox("Select Year", years)
     
     formatted_date = f"{selected_month} {selected_year}"
     
@@ -41,11 +43,13 @@ def show():
     st.write("Rename categories, allocate funds, or remove buckets you don't need.")
     
     planned_budget = {}
-    categories_to_delete = []
-
+    indices_to_remove = []
+    
+    # 2. Customizable Budget Categories Loop
     for i, category in enumerate(st.session_state.categories):
         col_name, col_amt, col_del = st.columns([4, 4, 2])
         
+        # Rename category directly
         updated_name = col_name.text_input(f"Name_{i}", value=category, key=f"cat_name_{i}", label_visibility="collapsed")
         
         if updated_name.strip() and updated_name != category:
@@ -53,23 +57,25 @@ def show():
             
         current_name = st.session_state.categories[i]
         
+        # Allocate budget
         planned_amt = col_amt.number_input(
             f"Amt_{i}", 
             min_value=0.0, 
             value=0.0, 
             step=100.0,
-            key=f"budget_{i}",
+            key=f"budget_amt_{i}",
             label_visibility="collapsed"
         )
         planned_budget[current_name] = planned_amt
         
+        # Remove category
         delete_clicked = col_del.button("Remove", key=f"del_{i}")
         if delete_clicked:
-            categories_to_delete.append(i)
+            indices_to_remove.append(i)
 
-    if categories_to_delete:
-        for index in sorted(categories_to_delete, reverse=True):
-            st.session_state.categories.pop(index)
+    if indices_to_remove:
+        for idx in sorted(indices_to_remove, reverse=True):
+            st.session_state.categories.pop(idx)
         st.rerun()
 
     expander = st.expander("➕ Add New Budget Category")
@@ -105,7 +111,9 @@ def show():
     if save_clicked:
         all_budgets = data_loader.load_budget_data()
         
-
+        if all_budgets is None:
+            all_budgets = []
+            
         updated_budgets = [b for b in all_budgets if b["month"] != formatted_date]
         
         for category_name, amt in planned_budget.items():
