@@ -4,9 +4,7 @@ from datetime import date
 
 def init_expense_categories():
     if "categories" not in st.session_state:
-        st.session_state.categories = [
-            "Food", "Transportation", "Utilities", "Savings", "Entertainment", "Miscellaneous"
-        ]
+        st.session_state.categories = [ "Food", "Transportation", "Utilities", "Savings", "Entertainment", "Miscellaneous"]
         
     saved_budgets = data_loader.load_budget_data()
     if saved_budgets:
@@ -22,7 +20,7 @@ def show():
     
     init_expense_categories()
     
-    st.subheader("Record a New Expense")
+    st.subheader("Record New Expense")
     
     col_date, col_month, col_year = st.columns([2, 2, 2])
     
@@ -53,3 +51,5 @@ def show():
             st.error("Error: Please complete description")
         else:
             st.success(f"Test Passed: Ready to save ₱{amount:,.2f} for {category} on {expense_date}.")
+
+# Paalala to organize the code later pls tj
