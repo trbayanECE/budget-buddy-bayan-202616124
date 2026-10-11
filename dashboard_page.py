@@ -1,4 +1,5 @@
 import streamlit as st
+import matplotlib.pyplot as plt
 import data_loader
 
 def build_category_summary(selected_month, budget_entries, expense_entries):
@@ -19,6 +20,60 @@ def build_category_summary(selected_month, budget_entries, expense_entries):
             summary[cat]["actual"] += float(exp["amount"])
             
     return summary
+
+# matplotlib piechart: https://matplotlib.org/stable/gallery/pie_and_polar_charts/pie_features.html
+def render_pie_chart(category_summary):
+    """Generates a Matplotlib pie chart for planned budget distribution."""
+    labels = []
+    sizes = []
+    
+    # Extract data for the pie chart
+    for cat, amounts in category_summary.items():
+        if amounts["planned"] > 0:
+            labels.append(cat)
+            sizes.append(amounts["planned"])
+            
+    fig, ax = plt.subplots()
+    if sizes:
+        max_idx = sizes.index(max(sizes))
+        explode = [0.1 if i == max_idx else 0 for i in range(len(sizes))]
+        
+        ax.pie(sizes, 
+               explode=explode, 
+               labels=labels, 
+               autopct='%1.1f%%', 
+               shadow=True, 
+               startangle=90)
+               
+        ax.axis('equal') 
+        ax.set_title("Planned Budget Distribution")
+    else:
+        ax.text(0.5, 0.5, 'No planned budget data', horizontalalignment='center', verticalalignment='center')
+        ax.axis('off')
+        
+    return fig
+
+#matplotlib barchart: https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.bar.html
+def render_comparison_chart(category_summary):
+    categories = list(category_summary.keys())
+    planned = [category_summary[cat]["planned"] for cat in categories]
+    actual = [category_summary[cat]["actual"] for cat in categories]
+    
+    x = range(len(categories))
+    width = 0.35
+    
+    fig, ax = plt.subplots(figsize=(8, 4))
+    ax.bar([i - width/2 for i in x], planned, width, label='Planned', color='skyblue')
+    ax.bar([i + width/2 for i in x], actual, width, label='Actual', color='salmon')
+    
+    ax.set_ylabel('Amount (₱)')
+    ax.set_title('Planned vs Actual Spending')
+    ax.set_xticks(x)
+    ax.set_xticklabels(categories, rotation=45, ha='right')
+    ax.legend()
+    
+    plt.tight_layout()
+    return fig
 
 def render_budget_breakdown(category_summary):
     st.subheader("Budget Breakdown")
@@ -62,6 +117,17 @@ def render_dashboard():
             months.append(entry["month"])
             
     selected_month = st.selectbox("Select Month", months)
-    
     summary = build_category_summary(selected_month, budget_data, expense_data)
+    
+    st.markdown("---")
+    st.subheader("Budget Distribution")
+    st.pyplot(render_pie_chart(summary))
+    
+    st.markdown("---")
+    st.subheader("Spending Comparison")
+    st.pyplot(render_comparison_chart(summary))
+
+    st.markdown("---")
     render_budget_breakdown(summary)
+
+# problem 1: how to make graphs dark mode
