@@ -1,4 +1,4 @@
-import streamlit as st, dashboard_page, budget_page, expense_page
+import streamlit as st, dashboard_page, budget_page, expense_page, categories_page
 
 st.set_page_config(
     page_title="Budget Buddy",
@@ -24,5 +24,4 @@ elif navigation == "Accounts":
     st.title("Accounts")
     st.write("Accounts management")
 elif navigation == "Categories":
-    st.title("Categories")
-    st.write("Expense and income category lists")
+    categories_page.show()
