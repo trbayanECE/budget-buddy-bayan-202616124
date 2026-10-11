@@ -1,8 +1,4 @@
-import streamlit as st
-import dashboard_page
-import budget_page
-import expense_page
-
+import streamlit as st, dashboard_page, budget_page, expense_page
 
 st.set_page_config(
     page_title="Budget Buddy",
@@ -10,15 +6,10 @@ st.set_page_config(
     layout="wide"
 )
 
-
 st.sidebar.title("Budget Buddy")
 st.sidebar.markdown("Test")
 
-navigation = st.sidebar.radio(
-    "Navigation",
-    ["Dashboard", "Records", "Budget", "Analysis", "Accounts", "Categories"]
-)
-
+navigation = st.sidebar.radio("Navigation", ["Dashboard", "Records", "Budgets", "Analysis", "Accounts", "Categories"] )
 
 if navigation == "Dashboard":
     dashboard_page.show()
