@@ -48,12 +48,36 @@ def show():
 
     st.write("---")
     
-    if st.button("Save Expense", text_alignment="right"):
+    if st.button("Save Expense"):
         if amount <= 0:
             st.error("Error: Expense amount must be greater than 0.")
         elif not description.strip():
             st.error("Error: Please complete description")
         else:
             st.success(f"Test Passed: Ready to save ₱{amount:,.2f} for {category} on {expense_date}.")
+
+    st.write("---")
+
+    # expense history
+    # markdown: https://docs.streamlit.io/develop/api-reference/text/st.markdown
+    st.markdown("<h3 style='text-align: center;'>Expense History</h3>", unsafe_allow_html=True)
+    
+    all_expenses = data_loader.load_expense_data()
+    
+    if not all_expenses:
+        st.info("No expenses recorded yet. Add your first expense above!")
+    else:
+        display_data = []
+
+        for exp in reversed(all_expenses):
+            display_data.append({
+                "Date": exp["date"],
+                "Budget Month": exp["month"],
+                "Category": exp["category"],
+                "Description": exp["description"],
+                "Amount": f"₱{exp['amount']:,.2f}"
+            })
+            
+        st.dataframe(display_data, use_container_width=True, hide_index=True)
 
 # Paalala to organize the code later pls tj
