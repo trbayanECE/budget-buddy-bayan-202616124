@@ -1,4 +1,4 @@
-import streamlit as st, dashboard_page, budget_page, expense_page, categories_page
+import streamlit as st, dashboard_page, budget_page, expense_page
 
 st.set_page_config(
     page_title="Budget Buddy",
@@ -9,7 +9,7 @@ st.set_page_config(
 st.sidebar.title("Budget Buddy")
 st.sidebar.markdown("Test")
 
-navigation = st.sidebar.radio("Navigation", ["Dashboard", "Records", "Budgets", "Analysis", "Accounts", "Categories"] )
+navigation = st.sidebar.radio("Navigation", ["Dashboard", "Records", "Budgets", "Analysis"] )
 
 if navigation == "Dashboard":
     dashboard_page.show()
@@ -20,8 +20,4 @@ elif navigation == "Records":
 elif navigation == "Analysis":
     st.title("Analysis")
     st.write("Pie charts and percentages ")
-elif navigation == "Accounts":
-    st.title("Accounts")
-    st.write("Accounts management")
-elif navigation == "Categories":
-    categories_page.show()
+
