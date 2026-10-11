@@ -1,5 +1,67 @@
 import streamlit as st
+import data_loader
 
-def show():
-    st.title("Home")
-    st.write("Test")
+def build_category_summary(selected_month, budget_entries, expense_entries):
+    summary = {}
+    
+    for bud in budget_entries:
+        if bud["month"] == selected_month:
+            cat = bud["category"]
+            if cat not in summary:
+                summary[cat] = {"planned": 0.0, "actual": 0.0}
+            summary[cat]["planned"] += bud["planned_amount"]
+            
+    for exp in expense_entries:
+        if exp["month"] == selected_month:
+            cat = exp["category"]
+            if cat not in summary:
+                summary[cat] = {"planned": 0.0, "actual": 0.0}
+            summary[cat]["actual"] += float(exp["amount"])
+            
+    return summary
+
+def render_budget_breakdown(category_summary):
+    st.subheader("Budget Breakdown")
+    
+    header_col1, header_col2, header_col3, header_col4 = st.columns(4)
+    header_col1.markdown("**Category**")
+    header_col2.markdown("**Planned**")
+    header_col3.markdown("**Actual**")
+    header_col4.markdown("**Status**")
+    
+    st.markdown("---")
+    
+    for cat, amounts in category_summary.items():
+        row_col1, row_col2, row_col3, row_col4 = st.columns(4)
+        
+        row_col1.write(cat)
+        row_col2.write(f"₱{amounts['planned']:,.2f}")
+        row_col3.write(f"₱{amounts['actual']:,.2f}")
+        
+        diff = amounts['planned'] - amounts['actual']
+        
+        if diff < 0:
+            row_col4.error(f"Over budget by ₱{abs(diff):,.2f}")
+        else:
+            row_col4.success(f"₱{diff:,.2f} remaining")
+
+def render_dashboard():
+    """This function is called by main.py to display the dashboard tab."""
+    st.header("Financial Dashboard")
+    
+    budget_data = data_loader.load_budget_data()
+    expense_data = data_loader.load_expense_data()
+    
+    if not budget_data and not expense_data:
+        st.info("No data found. Add budgets or expenses first.")
+        return
+        
+    months = []
+    for entry in budget_data + expense_data:
+        if entry["month"] not in months:
+            months.append(entry["month"])
+            
+    selected_month = st.selectbox("Select Month", months)
+    
+    summary = build_category_summary(selected_month, budget_data, expense_data)
+    render_budget_breakdown(summary)

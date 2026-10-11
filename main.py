@@ -9,7 +9,7 @@ def main():
     tab1, tab2, tab3 = st.tabs(["Dashboard", "Budget Planner", "Expense Tracker"])
     
     with tab1:
-        dashboard_page.show()
+        dashboard_page.render_dashboard()
         
     with tab2:
         budget_page.show()
