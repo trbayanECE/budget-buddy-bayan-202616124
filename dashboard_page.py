@@ -1,5 +1,5 @@
 import streamlit as st
 
 def show():
-    st.title("Page Name")
+    st.title("Home")
     st.write("Test")

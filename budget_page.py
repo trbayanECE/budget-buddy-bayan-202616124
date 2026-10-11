@@ -1,15 +1,15 @@
 import streamlit as st
 
 def show():
-    st.title("Page Name")
+    st.title("Budget")
     st.write("Test")
 
 DEFAULT_CATEGORIES = [
-    "Housing / Rent",
-    "Food & Groceries",
+    "Dorm",
+    "Food",
     "Transportation",
     "Utilities",
     "Entertainment",
-    "Savings & Investments",
-    "Miscellaneous"
+    "Savings",
+    "Others"
 ]

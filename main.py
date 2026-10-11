@@ -6,12 +6,12 @@ import expense_page
 # Page configuration
 st.set_page_config(
     page_title="Budget Buddy",
-    page_icon="💰",
+    page_icon="000",
     layout="wide"
 )
 
 # Sidebar Navigation
-st.sidebar.title("Budget Buddy 💰")
+st.sidebar.title("Budget Buddy")
 st.sidebar.markdown("Know where your money goes[cite: 1].")
 
 navigation = st.sidebar.radio(
