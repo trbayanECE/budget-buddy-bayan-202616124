@@ -9,59 +9,93 @@ def get_financial_summary(month_filter):
     total_budget = 0.0
     total_expenses = 0.0
     
-    for entry in budget_entries:
-        if entry["month"] == month_filter:
-            total_budget += entry["planned_amount"]
+    if budget_entries:
+        for entry in budget_entries:
+            if entry["month"] == month_filter:
+                total_budget += entry["planned_amount"]
             
-    for entry in expense_entries:
-        if entry["month"] == month_filter:
-            total_expenses += entry["amount"]
+    if expense_entries:
+        for entry in expense_entries:
+            if entry["month"] == month_filter:
+                total_expenses += entry["amount"]
             
     remaining_total = total_budget - total_expenses
     
     return total_budget, total_expenses, remaining_total
 
 def main():
-    st.set_page_config(page_title="Budget Buddy", page_icon="💸", layout="centered")
-    
-    st.title("MyMoney - Budget Buddy")
+    st.set_page_config(page_title="Budget Buddy", page_icon="💸", layout="wide")
 
-    budget_entries = data_loader.load_budget_data()
-    months = []
-    for entry in budget_entries:
-        if entry["month"] not in months:
-            months.append(entry["month"])
-            
-    if not months:
-        months = ["January 2027"]
-        
-    current_month = st.selectbox("Select Month", options=months)
+    st.sidebar.header("Budget Buddy")
+    st.sidebar.markdown("*Know where your money goes*")
 
-    total_budget, total_expenses, remaining_total = get_financial_summary(current_month)
+    months_list = [
+        "January", "February", "March", "April", "May", "June", 
+        "July", "August", "September", "October", "November", "December"
+    ]
+    years_list = [2026, 2027, 2028, 2029, 2030]
+
+    selected_month_name = st.sidebar.selectbox("Select Month", months_list)
+    selected_year = st.sidebar.selectbox("Select Year", years_list)
+
+    selected_month = f"{selected_month_name} {selected_year}"
     
+    st.session_state["selected_month"] = selected_month_name
+    st.session_state["selected_year"] = str(selected_year)
+
+    total_budget, total_expenses, remaining_total = get_financial_summary(selected_month)
+
     col1, col2, col3 = st.columns(3)
 
-    with col1:
-        st.info(f"**BUDGET**\n\n### ₱{total_budget:,.2f}", icon="💰")
+    col1.markdown(f"""
+        <div style="background-color: #363531; padding: 1rem; border-radius: 0.5rem; border: 1px solid #5e5c56;">
+            <p style="margin: 0; font-weight: 600; color: #f0f0f0;">💰 BUDGET</p>
+            <h3 style="margin: 0; padding-top: 0.5rem; color: #f0f0f0;">₱{total_budget:,.2f}</h3>
+        </div>
+    """, unsafe_allow_html=True)
         
-    with col2:
-        st.info(f"**EXPENSES**\n\n### ₱{total_expenses:,.2f}", icon="📉")
+    col2.markdown(f"""
+        <div style="background-color: #363531; padding: 1rem; border-radius: 0.5rem; border: 1px solid #5e5c56;">
+            <p style="margin: 0; font-weight: 600; color: #f0f0f0;">📉 EXPENSES</p>
+            <h3 style="margin: 0; padding-top: 0.5rem; color: #f0f0f0;">₱{total_expenses:,.2f}</h3>
+        </div>
+    """, unsafe_allow_html=True)
         
-    with col3:
-        if remaining_total >= 0:
-            st.success(f"**REMAINING TOTAL**\n\n### ₱{remaining_total:,.2f}", icon="✅")
-        else:
-            st.error(f"**REMAINING TOTAL**\n\n### ₱{remaining_total:,.2f}", icon="⚠️")
+    if remaining_total >= 0:
+        rem_color = "#72c472" # Pale Green
+        rem_icon = "✅"
+    else:
+        rem_color = "#e56767" # Pale Red
+        rem_icon = "⚠️"
+        
+    col3.markdown(f"""
+        <div style="background-color: #363531; padding: 1rem; border-radius: 0.5rem; border: 1px solid #5e5c56;">
+            <p style="margin: 0; font-weight: 600; color: {rem_color};">{rem_icon} REMAINING TOTAL</p>
+            <h3 style="margin: 0; padding-top: 0.5rem; color: {rem_color};">₱{remaining_total:,.2f}</h3>
+        </div>
+    """, unsafe_allow_html=True)
 
-    tab1, tab2, tab3 = st.tabs(["Expenses", "Budget", "Analysis"])
+    st.markdown(
+        """
+        <style>
+        /* Center tab headers */
+        div[role="tablist"] {
+            justify-content: center;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+    
+    tab1, tab2, tab3 = st.tabs(["Budget", "Expenses", "Analysis"])
 
     with tab1:
-        expense_page.show()
+        budget_page.show(selected_month)
 
     with tab2:
-        budget_page.show()
+        expense_page.show()
 
     with tab3:
-        dashboard_page.render_dashboard(current_month)
+        dashboard_page.render_dashboard(selected_month)
 
 main()
