@@ -1,0 +1,27 @@
+[theme]
+base="dark"
+
+#brown-gray background
+backgroundColor="#43423e"
+secondaryBackgroundColor="#363531"
+
+#pale yellow tone
+primaryColor="#eed369"
+textColor="#f0f0f0"
+
+# pale brown for border
+borderColor="#5e5c56"
+baseRadius="0.5rem"
+
+
+# textbox gray hue
+blueBackgroundColor="#363531"
+blueTextColor="#f0f0f0"
+
+# pale green
+greenBackgroundColor="#363531" 
+greenTextColor="#72c472"
+
+# pale red
+redBackgroundColor="#363531"
+redTextColor="#e56767"
