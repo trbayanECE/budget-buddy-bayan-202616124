@@ -45,7 +45,6 @@ def show():
     planned_budget = {}
     indices_to_remove = []
     
-    # 2. Customizable Budget Categories Loop
     for i, category in enumerate(st.session_state.categories):
         col_name, col_amt, col_del = st.columns([4, 4, 2])
         
@@ -128,3 +127,5 @@ def show():
             
         data_loader.save_budget_data(updated_budgets)
         st.success(f"Budget for {formatted_date} saved successfully!")
+
+# Need to organize code

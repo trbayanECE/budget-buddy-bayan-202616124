@@ -19,10 +19,10 @@ def show():
     st.title("Expense Tracker", text_alignment="center")
     
     init_expense_categories()
-    
-    st.subheader("Record New Expense", text_alignment="center")
 
     st.write("---")
+
+    st.subheader("Record New Expense", text_alignment="center")
     
     col_date, col_month, col_year = st.columns([2, 2, 2])
     
@@ -45,8 +45,6 @@ def show():
     amount = col_amt.number_input("Amount (₱)", min_value=0.0, value=0.0, step=50.0)
     
     description = st.text_input("Description")
-
-    st.write("---")
     
     if st.button("Save Expense"):
         if amount <= 0:

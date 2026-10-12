@@ -23,17 +23,21 @@ def build_category_summary(selected_month, budget_entries, expense_entries):
 
 # matplotlib piechart: https://matplotlib.org/stable/gallery/pie_and_polar_charts/pie_features.html
 def render_pie_chart(category_summary):
-    """Generates a Matplotlib pie chart for planned budget distribution."""
+    plt.style.use('dark_background')
+    
     labels = []
     sizes = []
     
-    # Extract data for the pie chart
     for cat, amounts in category_summary.items():
         if amounts["planned"] > 0:
             labels.append(cat)
             sizes.append(amounts["planned"])
             
     fig, ax = plt.subplots()
+    
+    fig.patch.set_alpha(0.0)
+    ax.patch.set_alpha(0.0)
+    
     if sizes:
         max_idx = sizes.index(max(sizes))
         explode = [0.1 if i == max_idx else 0 for i in range(len(sizes))]
@@ -46,15 +50,16 @@ def render_pie_chart(category_summary):
                startangle=90)
                
         ax.axis('equal') 
-        ax.set_title("Planned Budget Distribution")
     else:
         ax.text(0.5, 0.5, 'No planned budget data', horizontalalignment='center', verticalalignment='center')
         ax.axis('off')
         
     return fig
 
-#matplotlib barchart: https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.bar.html
+# matplotlib bargraph: https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.bar.html
 def render_comparison_chart(category_summary):
+    plt.style.use('dark_background')
+    
     categories = list(category_summary.keys())
     planned = [category_summary[cat]["planned"] for cat in categories]
     actual = [category_summary[cat]["actual"] for cat in categories]
@@ -63,14 +68,20 @@ def render_comparison_chart(category_summary):
     width = 0.35
     
     fig, ax = plt.subplots(figsize=(8, 4))
-    ax.bar([i - width/2 for i in x], planned, width, label='Planned', color='skyblue')
-    ax.bar([i + width/2 for i in x], actual, width, label='Actual', color='salmon')
+    
+    fig.patch.set_alpha(0.0)
+    ax.patch.set_alpha(0.0)
+    
+    ax.bar([i - width/2 for i in x], planned, width, label='Planned', color='#00d4ff')
+    ax.bar([i + width/2 for i in x], actual, width, label='Actual', color='#ff6666')
     
     ax.set_ylabel('Amount (₱)')
     ax.set_title('Planned vs Actual Spending')
     ax.set_xticks(x)
     ax.set_xticklabels(categories, rotation=45, ha='right')
-    ax.legend()
+    
+    legend = ax.legend()
+    legend.get_frame().set_alpha(0.0)
     
     plt.tight_layout()
     return fig
@@ -101,7 +112,6 @@ def render_budget_breakdown(category_summary):
             row_col4.success(f"₱{diff:,.2f} remaining")
 
 def render_dashboard():
-    """This function is called by main.py to display the dashboard tab."""
     st.header("Financial Dashboard")
     
     budget_data = data_loader.load_budget_data()
@@ -120,11 +130,11 @@ def render_dashboard():
     summary = build_category_summary(selected_month, budget_data, expense_data)
     
     st.markdown("---")
-    st.subheader("Budget Distribution")
+    st.subheader("Budget Distribution", text_alignment="center")
     st.pyplot(render_pie_chart(summary))
     
     st.markdown("---")
-    st.subheader("Spending Comparison")
+    st.subheader("Spending Comparison", text_alignment="center")
     st.pyplot(render_comparison_chart(summary))
 
     st.markdown("---")

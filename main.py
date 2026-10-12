@@ -6,16 +6,17 @@ def main():
     
     st.title("MyMoney - Budget Buddy", text_alignment="center")
 
-    tab1, tab2, tab3 = st.tabs(["Dashboard", "Budget Planner", "Expense Tracker"])
-    
+    tab1, tab2, tab3 = st.tabs(["Expenses", "Budget", "Analysis"])
+
     with tab1:
-        dashboard_page.render_dashboard()
-        
+        expense_page.show()
+
     with tab2:
         budget_page.show()
-        
+
     with tab3:
-        expense_page.show()
+        dashboard_page.render_dashboard()
+        
 
 main()
 
