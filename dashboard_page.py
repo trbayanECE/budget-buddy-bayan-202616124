@@ -111,7 +111,7 @@ def render_budget_breakdown(category_summary):
         else:
             row_col4.success(f"₱{diff:,.2f} remaining")
 
-def render_dashboard():
+def render_dashboard(selected_month):
     st.header("Financial Dashboard")
     
     budget_data = data_loader.load_budget_data()
@@ -126,7 +126,6 @@ def render_dashboard():
         if entry["month"] not in months:
             months.append(entry["month"])
             
-    selected_month = st.selectbox("Select Month", months)
     summary = build_category_summary(selected_month, budget_data, expense_data)
     
     st.markdown("---")
