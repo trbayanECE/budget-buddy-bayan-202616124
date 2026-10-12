@@ -43,12 +43,52 @@ def main():
     
     col1, col2, col3 = st.columns(3)
 
+    base_style = """
+        height: 120px; 
+        border-radius: 8px; 
+        padding: 20px; 
+        display: flex; 
+        flex-direction: column; 
+        justify-content: center;
+    """
+
+    border_style = f"{base_style} border: 1px solid rgba(128, 128, 128, 0.4);"
+    
+    title_style = "font-size: 14px; font-weight: bold; opacity: 0.8; margin-bottom: 5px;"
+    value_style = "font-size: 32px; font-weight: bold; line-height: 1.1;"
+
     with col1:
-        st.metric(label="BUDGET", value=f"₱{total_budget:,.2f}")
+        st.markdown(f"""
+        <div style="{border_style}">
+            <div style="{title_style}">BUDGET</div>
+            <div style="{value_style}">₱{total_budget:,.2f}</div>
+        </div>
+        """, unsafe_allow_html=True)
+        
     with col2:
-        st.metric(label="EXPENSES", value=f"₱{total_expenses:,.2f}")
+        st.markdown(f"""
+        <div style="{border_style}">
+            <div style="{title_style}">EXPENSES</div>
+            <div style="{value_style}">₱{total_expenses:,.2f}</div>
+        </div>
+        """, unsafe_allow_html=True)
+        
     with col3:
-        st.metric(label="REMAINING TOTAL", value=f"₱{remaining_total:,.2f}")
+        if remaining_total >= 0:
+            bg_style = f"{base_style} background-color: #1a422b;" 
+            text_color = "#5ee084" 
+            icon = "✅"
+        else:
+            bg_style = f"{base_style} background-color: #4a1818;" 
+            text_color = "#ff6b6b" 
+            icon = "⚠️"
+            
+        st.markdown(f"""
+        <div style="{bg_style} color: {text_color};">
+            <div style="{title_style}">{icon} REMAINING TOTAL</div>
+            <div style="{value_style}">₱{remaining_total:,.2f}</div>
+        </div>
+        """, unsafe_allow_html=True)
 
     st.divider()
 
