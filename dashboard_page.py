@@ -138,5 +138,3 @@ def render_dashboard(selected_month):
 
     st.markdown("---")
     render_budget_breakdown(summary)
-
-# problem 1: how to make graphs dark mode
