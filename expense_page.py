@@ -6,7 +6,7 @@ import calendar
 import io
 
 def init_expense_categories():
-    """Initializes expense categories"""
+    """Initialize expense categories"""
     if "categories" not in st.session_state:
         st.session_state.categories = [
             "Food",
@@ -30,7 +30,7 @@ def init_expense_categories():
 # record expense
 def render_expense_form(months, years):
     with st.container(border=True):
-        st.subheader("Record New Expense")
+        st.subheader("Record New Expense", text_alignment="center")
 
         col_date, col_month, col_year = st.columns(3)
         expense_date = col_date.date_input("Date", date.today())
@@ -235,29 +235,57 @@ def display_expense_table(active_expenses, active_label):
         st.dataframe(display_data, use_container_width=True, hide_index=True)
 
 
-def render_spending_analytics(active_expenses, active_label, history_view):
-    st.header(f"Spending Analytics for {active_label}", text_alignment="center")
-
-    if not active_expenses:
-        st.info(f"No expense data available for {active_label}.")
-        return
-
-    if history_view in ["Month", "Weekly"]:
+def render_spending_analytics(all_expenses, month_filtered, history_view, active_label, formatted_month):
+    if history_view == "Month":
+        year = active_label.split()[1] if " " in active_label else active_label
+        st.header(f"Spending Analytics for {year}", text_alignment="center")
+        
         totals = {}
-        for exp in active_expenses:
+        months_order = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
+        
+        for m in months_order:
+            totals[m] = 0.0
+            
+        has_data = False
+        for exp in all_expenses:
+            if exp.get("month", "").endswith(year):
+                m = exp["month"].split()[0]
+                if m in totals:
+                    totals[m] += exp["amount"]
+                    has_data = True
+                    
+        x_vals = months_order
+        y_vals = [totals[m] for m in x_vals]
+        x_axis_label = "Month"
+        
+    elif history_view == "Weekly":
+        st.header(f"Spending Analytics for {formatted_month}", text_alignment="center")
+        totals = {}
+        for exp in month_filtered:
+            dt_obj = datetime.strptime(exp["date"], "%Y-%m-%d")
+            yw = f"{dt_obj.isocalendar()[0]}-W{dt_obj.isocalendar()[1]:02d}"
+            totals[yw] = totals.get(yw, 0.0) + exp["amount"]
+            
+        x_vals = sorted(totals.keys())
+        y_vals = [totals[w] for w in x_vals]
+        x_axis_label = "Week"
+        has_data = len(x_vals) > 0
+        
+    else: # daily
+        st.header(f"Spending Analytics for {formatted_month}", text_alignment="center")
+        totals = {}
+        for exp in month_filtered:
             d = exp["date"]
             totals[d] = totals.get(d, 0.0) + exp["amount"]
+            
         x_vals = sorted(totals.keys())
         y_vals = [totals[d] for d in x_vals]
         x_axis_label = "Date"
-    else:
-        totals = {}
-        for exp in active_expenses:
-            cat = exp["category"]
-            totals[cat] = totals.get(cat, 0.0) + exp["amount"]
-        x_vals = list(totals.keys())
-        y_vals = [totals[cat] for cat in x_vals]
-        x_axis_label = "Category"
+        has_data = len(x_vals) > 0
+
+    if not has_data:
+        st.info("No expense data available to display chart.")
+        return
 
     rainbow_palette = ["#ff4b4b", "#ffa15a", "#f6c915", "#72c472", "#29b5e8", "#ab63fa", "#e56767", ]
     bar_colors = [rainbow_palette[i % len(rainbow_palette)] for i in range(len(x_vals))]
@@ -285,25 +313,26 @@ def render_spending_analytics(active_expenses, active_label, history_view):
 
 
 def show():
-    st.title("Expense Tracker", text_alignment="center")
+    st.header("Expense Tracker", text_alignment="center", divider="rainbow")
 
     init_expense_categories()
 
     months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December",]
     years = ["2026", "2027", "2028", "2029", "2030", "2031"]
 
-    selected_month, selected_year, formatted_month = render_expense_form(
-        months, years
-    )
+    controls_container = st.container()
 
-    st.write("---")
+    col_left, col_right = st.columns([1.5, 1], gap="small")
+
+    with col_right:
+        selected_month, selected_year, formatted_month = render_expense_form(
+            months, years
+        )
 
     all_expenses = data_loader.load_expense_data()
     month_filtered = [
         exp for exp in all_expenses if exp.get("month") == formatted_month
     ]
-
-    st.header("Expense History", text_alignment="center", divider="rainbow")
 
     all_possible_months, start_date, end_date, weeks_in_month = (
         build_date_context(selected_month, selected_year, months, years)
@@ -315,39 +344,42 @@ def show():
         global_month, global_year, all_possible_months, start_date
     )
 
-    col_view, col_prev, col_mid, col_next, col_total = st.columns(
-        [2.2, 0.4, 3.8, 0.4, 2.6], vertical_alignment="center"
-    )
-
-    with col_view:
-        history_view = st.radio(
-            "VIEW HISTORY BY:",
-            ["Month", "Weekly", "Daily"],
-            horizontal=True,
-            key="expense_history_view",
+    with controls_container:
+        col_view, col_prev, col_mid, col_next, col_total = st.columns(
+            [2.2, 0.4, 3.8, 0.4, 2.6], vertical_alignment="center"
         )
 
-    active_label, active_expenses = filter_active_expenses(
-        history_view,
-        all_expenses,
-        month_filtered,
-        all_possible_months,
-        weeks_in_month,
-    )
-    period_total = sum(exp["amount"] for exp in active_expenses)
+        with col_view:
+            history_view = st.radio(
+                "VIEW HISTORY BY:",
+                ["Month", "Weekly", "Daily"],
+                horizontal=True,
+                key="expense_history_view",
+            )
 
-    render_prev_next_buttons(
-        history_view,
-        col_prev,
-        col_next,
-        all_possible_months,
-        weeks_in_month,
-        start_date,
-        end_date,
-    )
-    render_summary_cards(col_mid, col_total, active_label, period_total)
+        active_label, active_expenses = filter_active_expenses(
+            history_view,
+            all_expenses,
+            month_filtered,
+            all_possible_months,
+            weeks_in_month,
+        )
+        period_total = sum(exp["amount"] for exp in active_expenses)
 
-    st.write("")
+        render_prev_next_buttons(
+            history_view,
+            col_prev,
+            col_next,
+            all_possible_months,
+            weeks_in_month,
+            start_date,
+            end_date,
+        )
+        render_summary_cards(col_mid, col_total, active_label, period_total)
 
-    display_expense_table(active_expenses, active_label)
-    render_spending_analytics(active_expenses, active_label, history_view)
+    with col_left:
+        display_expense_table(active_expenses, active_label)
+
+    st.write("---")
+    
+    render_spending_analytics(all_expenses, month_filtered, history_view, active_label, formatted_month)

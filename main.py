@@ -6,8 +6,25 @@ import expense_page
 def main():
     st.set_page_config(page_title="Budget Buddy", page_icon="💸", layout="wide")
 
-    st.sidebar.header("Budget Buddy")
-    st.sidebar.divider()
+    st.logo("budgetbuddy_logo.png", size="large", icon_image="budgetbuddy_icon.png") 
+
+    st.markdown("""
+        <style>
+               .css-18e3th9 {
+                    padding-top: 0rem;
+                    padding-bottom: 10rem;
+                    padding-left: 5rem;
+                    padding-right: 5rem;
+                }
+               .css-1d391kg {
+                    padding-top: 3.5rem;
+                    padding-right: 1rem;
+                    padding-bottom: 3.5rem;
+                    padding-left: 1rem;
+                }
+        </style>
+        """, unsafe_allow_html=True)
+    
     months_list = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
     years_list = [2027, 2028, 2029, 2030, 2031]
 
@@ -19,6 +36,8 @@ def main():
     st.session_state["selected_month"] = selected_month_name
     st.session_state["selected_year"] = str(selected_year)
 
+    st.sidebar.write("---")
+    
     def run_budget():
         budget_page.show(selected_month)
 

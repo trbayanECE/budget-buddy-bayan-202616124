@@ -36,143 +36,164 @@ def calculate_financial_metrics(selected_month, budget_entries, category_summary
     return total_income, total_planned, total_actual, money_remaining
 
 
+def generate_metric_card(title, value, text_color="#f0f0f0"):
+    return f"""
+    <div style="background-color: #363531; padding: 1rem; border-radius: 0.5rem; border: 1px solid #5e5c56; margin-bottom: 10px;">
+        <div style="font-size: 0.85rem; font-weight: 600; color: #f0f0f0; margin-bottom: 0.5rem;">{title}</div>
+        <div style="font-size: 1.6rem; font-weight: bold; color: {text_color};">₱{value:,.2f}</div>
+    </div>"""
+
+
 def render_financial_summary(total_income, total_planned, total_actual, money_remaining):
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2 = st.columns(2)
+    
+    rem_color = "#e56767" if money_remaining < 0 else "#72c472"
+    rem_icon = "⚠️" if money_remaining < 0 else "🪙"
 
-    col1.markdown(
-        f"""
-        <div style="background-color: #363531; padding: 1rem; border-radius: 0.5rem; border: 1px solid #5e5c56;">
-            <div style="font-size: 0.85rem; font-weight: 600; color: #f0f0f0; margin-bottom: 0.5rem;">💰 TOTAL INCOME</div>
-            <div style="font-size: 1.8rem; font-weight: bold; color: #f0f0f0;">₱{total_income:,.2f}</div>
-        </div>""",
-        unsafe_allow_html=True,
-    )
+    with col1:
+        st.markdown(generate_metric_card("💰 TOTAL INCOME", total_income), unsafe_allow_html=True)
+    with col2:
+        st.markdown(generate_metric_card("📋 PLANNED EXPENSES", total_planned), unsafe_allow_html=True)
 
-    col2.markdown(
-        f"""
-        <div style="background-color: #363531; padding: 1rem; border-radius: 0.5rem; border: 1px solid #5e5c56;">
-            <div style="font-size: 0.85rem; font-weight: 600; color: #f0f0f0; margin-bottom: 0.5rem;">📋 PLANNED EXPENSES</div>
-            <div style="font-size: 1.8rem; font-weight: bold; color: #f0f0f0;">₱{total_planned:,.2f}</div>
-        </div>""",
-        unsafe_allow_html=True,
-    )
+    col3, col4 = st.columns(2)
 
-    col3.markdown(
-        f"""
-        <div style="background-color: #363531; padding: 1rem; border-radius: 0.5rem; border: 1px solid #5e5c56;">
-            <div style="font-size: 0.85rem; font-weight: 600; color: #f0f0f0; margin-bottom: 0.5rem;">🧾 ACTUAL EXPENSES</div>
-            <div style="font-size: 1.8rem; font-weight: bold; color: #f0f0f0;">₱{total_actual:,.2f}</div>
-        </div>""",
-        unsafe_allow_html=True,
-    )
+    with col3:
+        st.markdown(generate_metric_card("🧾 ACTUAL EXPENSES", total_actual), unsafe_allow_html=True)
+    with col4:
+        st.markdown(generate_metric_card(f"{rem_icon} MONEY REMAINING", money_remaining, rem_color), unsafe_allow_html=True)
 
-    rem_color = "#72c472" if money_remaining >= 0 else "#e56767"
-    rem_icon = "🪙" if money_remaining >= 0 else "⚠️"
-    col4.markdown(
+
+def render_budget_progress(total_planned, total_actual):
+    if total_planned > 0:
+        percent = (total_actual / total_planned) * 100
+    else:
+        percent = 0.0
+    
+    visual_percent = min(percent, 100)
+    bar_color = "#e56767" if percent > 100 else "#72c472"
+    
+    st.markdown(
         f"""
-        <div style="background-color: #363531; padding: 1rem; border-radius: 0.5rem; border: 1px solid #5e5c56;">
-            <div style="font-size: 0.85rem; font-weight: 600; color: {rem_color}; margin-bottom: 0.5rem;">{rem_icon} MONEY REMAINING</div>
-            <div style="font-size: 1.8rem; font-weight: bold; color: {rem_color};">₱{money_remaining:,.2f}</div>
-        </div>""",
-        unsafe_allow_html=True,
+        <div style="margin-top: 10px; margin-bottom: 15px; padding: 0 5px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                <span style="font-size: 0.95rem; font-weight: 600; color: var(--text-color);">Budget Usage</span>
+                <span style="font-size: 0.95rem; font-weight: bold; color: {bar_color};">{percent:.1f}% Used</span>
+            </div>
+            <div style="width: 100%; background-color: #363531; border-radius: 8px; height: 14px; border: 1px solid #5e5c56;">
+                <div style="width: {visual_percent}%; background-color: {bar_color}; height: 100%; border-radius: 7px;"></div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
     )
 
 
 def render_pie_chart(category_summary):
-    plt.style.use("dark_background")
-    labels = []
-    sizes = []
+    labels = [c for c, a in category_summary.items() if a["planned"] > 0]
+    sizes = [a["planned"] for c, a in category_summary.items() if a["planned"] > 0]
 
-    for cat, amounts in category_summary.items():
-        if amounts["planned"] > 0:
-            labels.append(cat)
-            sizes.append(amounts["planned"])
-
-    fig, ax = plt.subplots()
-    fig.patch.set_alpha(0.0)
-    ax.patch.set_alpha(0.0)
+    fig, ax = plt.subplots(figsize=(6.5, 4), facecolor="none")
+    ax.set_facecolor("none")
 
     if sizes:
-        max_idx = sizes.index(max(sizes))
-        explode = [0.1 if i == max_idx else 0 for i in range(len(sizes))]
-        ax.pie(
-            sizes,
-            explode=explode,
-            labels=labels,
-            autopct="%1.1f%%",
-            shadow=True,
-            startangle=90,
+        colors = ["#29b5e8", "#ff9f43", "#2ed573", "#ff4757", "#a55eea", "#f7b731"]
+        wedges, texts, autotexts = ax.pie(
+            sizes, 
+            autopct="%1.1f%%", 
+            startangle=90, 
+            colors=colors[:len(sizes)], 
+            textprops=dict(color="white", fontsize=11)
         )
         ax.axis("equal")
-    else:
-        ax.text(0.5, 0.5, "No planned budget data", ha="center", va="center")
-        ax.axis("off")
-
-    return fig
-
-
-def render_comparison_chart(category_summary):
-    plt.style.use("dark_background")
-    categories = list(category_summary.keys())
-    planned = [category_summary[cat]["planned"] for cat in categories]
-    actual = [category_summary[cat]["actual"] for cat in categories]
-
-    x = range(len(categories))
-    width = 0.35
-
-    fig, ax = plt.subplots(figsize=(8, 4))
-    fig.patch.set_alpha(0.0)
-    ax.patch.set_alpha(0.0)
-
-    if categories:
-        ax.bar(
-            [i - width / 2 for i in x],
-            planned,
-            width,
-            label="Planned",
-            color="#00d4ff",
+        
+        ax.legend(
+            wedges, labels, 
+            loc="center left", 
+            bbox_to_anchor=(1, 0.5),
+            facecolor="#363531", 
+            edgecolor="#5e5c56", 
+            labelcolor="white", 
+            fontsize=11
         )
-        ax.bar(
-            [i + width / 2 for i in x],
-            actual,
-            width,
-            label="Actual",
-            color="#ff6666",
-        )
-        ax.set_ylabel("Amount (₱)")
-        ax.set_title("Planned vs Actual Spending")
-        ax.set_xticks(x)
-        ax.set_xticklabels(categories, rotation=45, ha="right")
-        legend = ax.legend()
-        legend.get_frame().set_alpha(0.0)
     else:
-        ax.text(0.5, 0.5, "No data", ha="center", va="center")
+        ax.text(0.5, 0.5, "No planned data", ha="center", va="center", color="white", fontsize=13)
         ax.axis("off")
 
     plt.tight_layout()
     return fig
 
 
-def render_charts_section(category_summary):
-    col1, col2 = st.columns(2)
+def configure_bar_chart_axes(ax, categories):
+    ax.set_yticks(range(len(categories)))
+    ax.set_yticklabels(categories, color="white", fontsize=12, fontweight='bold')
+    ax.invert_yaxis()
 
-    with col1:
-        st.markdown(
-            "<p style='text-align: center; font-weight: bold;'>Planned Budget Distribution</p>",
-            unsafe_allow_html=True,
-        )
-        fig_pie = render_pie_chart(category_summary)
-        st.pyplot(fig_pie)
-        plt.close(fig_pie)
+    ax.xaxis.set_visible(False)
+    for spine in ax.spines.values():
+        spine.set_visible(False)
 
-    with col2:
-        st.markdown(
-            "<p style='text-align: center; font-weight: bold;'>Planned vs Actual Spending</p>",
-            unsafe_allow_html=True,
-        )
-        fig_bar = render_comparison_chart(category_summary)
-        st.pyplot(fig_bar)
-        plt.close(fig_bar)
+
+def render_actual_over_planned_chart(category_summary):
+    plt.style.use("dark_background")
+    categories = list(category_summary.keys())
+    planned = [category_summary[cat]["planned"] for cat in categories]
+    actual = [category_summary[cat]["actual"] for cat in categories]
+
+    fig, ax = plt.subplots(figsize=(6, 5), facecolor="none")
+    ax.set_facecolor("none")
+
+    if categories:
+        y_pos = list(range(len(categories)))
+        height = 0.35
+        
+        colors = ["#29b5e8", "#ff9f43", "#2ed573", "#ff4757", "#a55eea", "#f7b731"]
+        bar_colors = [colors[i % len(colors)] for i in range(len(categories))]
+        
+        y_pos_planned = [y - height/2 for y in y_pos]
+        y_pos_actual = [y + height/2 for y in y_pos]
+        
+        ax.barh(y_pos_planned, planned, height=height, color=bar_colors, label="Planned")
+        ax.barh(y_pos_actual, actual, height=height, color=bar_colors, alpha=0.5, edgecolor="white", label="Actual")
+
+        max_val = max([max(planned), max(actual)]) if planned and actual else 0
+        padding = max_val * 0.05
+        
+        for i, (act, plan) in enumerate(zip(actual, planned)):
+            ax.text(max(act, plan) + padding, i, f"₱{act:,.1f} / ₱{plan:,.1f}", va='center', color='white', fontsize=12, fontweight='bold')
+
+        configure_bar_chart_axes(ax, categories)
+            
+        from matplotlib.patches import Patch
+        legend_elements = [
+            Patch(facecolor='#a3a3a3', label='Planned'),
+            Patch(facecolor='#a3a3a3', alpha=0.5, edgecolor='white', label='Actual')
+        ]
+        ax.legend(handles=legend_elements, facecolor="#363531", edgecolor="#5e5c56", labelcolor="white", fontsize=12, loc="lower right")
+    else:
+        ax.text(0.5, 0.5, "No data available", ha="center", va="center", color="white", fontsize=13)
+        ax.axis("off")
+
+    plt.tight_layout()
+    return fig
+
+
+def get_budget_status_details(remaining):
+    if remaining < 0:
+        return "#e56767", "rgba(229, 103, 103, 0.12)", "#e56767", "⚠️ <b>Overspent</b>"
+    return "#5e5c56", "#363531", "#72c472", "✅ <b>Good</b>"
+
+
+def generate_breakdown_row(cat, planned, actual, remaining):
+    border_color, bg_color, rem_color, status_html = get_budget_status_details(remaining)
+    return f"""
+    <div style="display: flex; align-items: center; background-color: {bg_color}; border: 1px solid {border_color}; border-radius: 8px; padding: 14px 16px; margin-bottom: 10px;">
+        <div style="flex: 2.5; font-size: 1.15rem; font-weight: 600; color: var(--text-color);">{cat}</div>
+        <div style="flex: 2; text-align: center; font-size: 1.15rem; color: var(--text-color);">₱{planned:,.2f}</div>
+        <div style="flex: 2; text-align: center; font-size: 1.15rem; color: var(--text-color);">₱{actual:,.2f}</div>
+        <div style="flex: 2; text-align: center; font-size: 1.15rem; color: {rem_color}; font-weight: bold;">₱{remaining:,.2f}</div>
+        <div style="flex: 2; text-align: center; font-size: 1.10rem; color: var(--text-color);">{status_html}</div>
+    </div>
+    """
 
 
 def render_budget_breakdown(category_summary):
@@ -183,15 +204,14 @@ def render_budget_breakdown(category_summary):
         return
 
     with st.container(border=True):
-        
         st.markdown(
             """
             <div style='display: flex; align-items: center; padding: 10px 16px 16px 16px; border-bottom: 1px solid #5e5c56; margin-bottom: 14px;'>
-                <div style='flex: 2.5; text-align: left; font-size: 1.15rem; font-weight: bold; color: var(--text-color);'>Category</div>
-                <div style='flex: 2; text-align: center; font-size: 1.15rem; font-weight: bold; color: var(--text-color);'>Planned amount</div>
-                <div style='flex: 2; text-align: center; font-size: 1.15rem; font-weight: bold; color: var(--text-color);'>Actual expense</div>
-                <div style='flex: 2; text-align: center; font-size: 1.15rem; font-weight: bold; color: var(--text-color);'>Remaining budget</div>
-                <div style='flex: 2; text-align: center; font-size: 1.15rem; font-weight: bold; color: var(--text-color);'>Status</div>
+                <div style='flex: 2.5; text-align: left; font-size: 1.25rem; font-weight: bold; color: var(--text-color);'>Category</div>
+                <div style='flex: 2; text-align: center; font-size: 1.25rem; font-weight: bold; color: var(--text-color);'>Planned</div>
+                <div style='flex: 2; text-align: center; font-size: 1.25rem; font-weight: bold; color: var(--text-color);'>Actual</div>
+                <div style='flex: 2; text-align: center; font-size: 1.25rem; font-weight: bold; color: var(--text-color);'>Remaining</div>
+                <div style='flex: 2; text-align: center; font-size: 1.25rem; font-weight: bold; color: var(--text-color);'>Status</div>
             </div>
             """,
             unsafe_allow_html=True
@@ -201,41 +221,7 @@ def render_budget_breakdown(category_summary):
             planned = amounts["planned"]
             actual = amounts["actual"]
             remaining = planned - actual
-
-            is_overbudget = remaining < 0
-
-        
-            if is_overbudget:
-                border_color = "#e56767"
-                bg_color = "rgba(229, 103, 103, 0.12)" 
-                rem_color = "#e56767"
-                status_html = "⚠️ <b>Overspent</b>"
-            else:
-                border_color = "#5e5c56"
-                bg_color = "#363531" 
-                rem_color = "#72c472"
-                status_html = "✅ <b>Good</b>"
-
-            st.markdown(
-                f"""
-                <div style="
-                    display: flex; 
-                    align-items: center; 
-                    background-color: {bg_color}; 
-                    border: 1px solid {border_color}; 
-                    border-radius: 8px; 
-                    padding: 12px 16px; 
-                    margin-bottom: 10px;
-                ">
-                    <div style="flex: 2.5; font-size: 1.1rem; font-weight: 600; color: var(--text-color);">{cat}</div>
-                    <div style="flex: 2; text-align: center; color: var(--text-color);">₱{planned:,.2f}</div>
-                    <div style="flex: 2; text-align: center; color: var(--text-color);">₱{actual:,.2f}</div>
-                    <div style="flex: 2; text-align: center; color: {rem_color}; font-weight: bold;">₱{remaining:,.2f}</div>
-                    <div style="flex: 2; text-align: center; color: var(--text-color);">{status_html}</div>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
+            st.markdown(generate_breakdown_row(cat, planned, actual, remaining), unsafe_allow_html=True)
 
 
 def render_dashboard(selected_month):
@@ -247,8 +233,35 @@ def render_dashboard(selected_month):
         selected_month, budget_data, category_summary
     )
 
-    render_financial_summary(total_income, total_planned, total_actual, money_remaining)
+    st.header("Budget Analysis", text_alignment="center", divider="rainbow")
+
+    col_metrics, col_pie = st.columns([1.2, 1.0], gap="medium")
+
+    with col_metrics:
+        st.header("Budget Summary", text_alignment="center")
+        render_financial_summary(total_income, total_planned, total_actual, money_remaining)
+        render_budget_progress(total_planned, total_actual)
+
+    with col_pie:
+        with st.container(border=True):
+            st.markdown("<p style='text-align: center; font-size: 1.15rem; font-weight: bold; margin-bottom: 0px;'>Planned Budget Distribution</p>", unsafe_allow_html=True)
+            fig_pie = render_pie_chart(category_summary)
+            st.pyplot(fig_pie, use_container_width=True)
+            plt.close(fig_pie)
+
     st.divider()
-    render_charts_section(category_summary)
-    st.divider()
-    render_budget_breakdown(category_summary)
+
+    col_table, col_graph = st.columns([1.2, 1.0], gap="small")
+
+    with col_table:
+        render_budget_breakdown(category_summary)
+
+    with col_graph:
+        st.header("Actual Over Planned Expenses", text_alignment="center")
+        with st.container(border=True):
+            if category_summary:
+                fig_barh = render_actual_over_planned_chart(category_summary)
+                st.pyplot(fig_barh, use_container_width=True)
+                plt.close(fig_barh)
+            else:
+                st.info("No data available.")
