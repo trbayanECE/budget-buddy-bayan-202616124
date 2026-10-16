@@ -35,9 +35,9 @@ def init_incomes(formatted_date, all_budgets):
                         seen_incomes.add(inc_tuple)
                         incomes_list.append({"source": b["income_source"], "amount": b["income"]})
                         
-            st.session_state[income_state_key] = incomes_list if incomes_list else [{"source": "Allowance", "amount": 15000.0}]
+            st.session_state[income_state_key] = incomes_list if incomes_list else [{"source": "Allowance", "amount": 0.0}]
         else:
-            st.session_state[income_state_key] = [{"source": "Allowance", "amount": 15000.0}]
+            st.session_state[income_state_key] = [{"source": "Allowance", "amount": 0.0}]
     return income_state_key
 
 def calculate_totals(formatted_date, income_list, planned_map):
@@ -224,7 +224,7 @@ def show(selected_month_str=None):
     st.header(f"({formatted_date}) Budget Categories & Planned Expenses", text_alignment="center", divider="rainbow")
     display_summary_cards(total_expected_income, temp_planned_total, temp_unallocated)
     
-    colors = ["#9c27b0", "#e91e63", "#ff9800", "#4caf50", "#2196f3", "#00bcd4", "#009688", "#ff5722"]
+    colors = ["#ff4b4b","#ffa15a","#f6c915","#72c472","#29b5e8","#ab63fa","#e56767","#ff758f","#e84393","#ff9eae","#ff7f0e","#ffc857","#ffe66d","#2ecc71","#00b894",]
     display_budget_progress_bar(total_expected_income, temp_unallocated, formatted_date, planned_map, colors)
     
     planned_budget = manage_budget_categories(formatted_date, planned_map, total_expected_income, colors)

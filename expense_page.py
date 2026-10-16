@@ -350,12 +350,13 @@ def show():
         )
 
         with col_view:
-            history_view = st.radio(
-                "VIEW HISTORY BY:",
-                ["Month", "Weekly", "Daily"],
-                horizontal=True,
-                key="expense_history_view",
-            )
+            with st.container(border=True):
+                history_view = st.radio(
+                    "VIEW HISTORY BY:",
+                    ["Month", "Weekly", "Daily"],
+                    horizontal=True,
+                    key="expense_history_view",
+                )
 
         active_label, active_expenses = filter_active_expenses(
             history_view,
@@ -383,3 +384,5 @@ def show():
     st.write("---")
     
     render_spending_analytics(all_expenses, month_filtered, history_view, active_label, formatted_month)
+
+    st.write("---")

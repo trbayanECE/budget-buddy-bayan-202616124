@@ -36,12 +36,17 @@ def calculate_financial_metrics(selected_month, budget_entries, category_summary
     return total_income, total_planned, total_actual, money_remaining
 
 
-def generate_metric_card(title, value, text_color="#f0f0f0"):
-    return f"""
-    <div style="background-color: #363531; padding: 1rem; border-radius: 0.5rem; border: 1px solid #5e5c56; margin-bottom: 10px;">
-        <div style="font-size: 0.85rem; font-weight: 600; color: #f0f0f0; margin-bottom: 0.5rem;">{title}</div>
-        <div style="font-size: 1.6rem; font-weight: bold; color: {text_color};">₱{value:,.2f}</div>
-    </div>"""
+def generate_metric_card(title, value, text_color="#f0f0f0", border_color="#5e5c56", bg_color="#363531", subtitle=""):
+    subtitle_html = f'<span style="font-size: 0.85rem; color: #e56767; font-weight: 600;">{subtitle}</span>' if subtitle else ""
+    return (
+        f'<div style="background-color: {bg_color}; padding: 1rem; border-radius: 0.5rem; border: 1px solid {border_color}; margin-bottom: 10px;">'
+        f'<div style="font-size: 0.85rem; font-weight: 600; color: #f0f0f0; margin-bottom: 0.5rem;">{title}</div>'
+        f'<div style="display: flex; align-items: baseline; gap: 0.75rem; flex-wrap: wrap;">'
+        f'<span style="font-size: 1.6rem; font-weight: bold; color: {text_color};">₱{value:,.2f}</span>'
+        f'{subtitle_html}'
+        f'</div>'
+        f'</div>'
+    )
 
 
 def render_financial_summary(total_income, total_planned, total_actual, money_remaining):
@@ -50,17 +55,31 @@ def render_financial_summary(total_income, total_planned, total_actual, money_re
     rem_color = "#e56767" if money_remaining < 0 else "#72c472"
     rem_icon = "⚠️" if money_remaining < 0 else "🪙"
 
+    inc_border = "#e56767" if total_income == 0 else "#5e5c56"
+    inc_bg = "rgba(229, 103, 103, 0.12)" if total_income == 0 else "#363531"
+    inc_subtitle = "⚠️ No amount set" if total_income == 0 else ""
+
+    plan_border = "#e56767" if total_planned == 0 else "#5e5c56"
+    plan_bg = "rgba(229, 103, 103, 0.12)" if total_planned == 0 else "#363531"
+    plan_subtitle = "⚠️ No amount set" if total_planned == 0 else ""
+
     with col1:
-        st.markdown(generate_metric_card("💰 TOTAL INCOME", total_income), unsafe_allow_html=True)
+        st.markdown(
+            generate_metric_card("💰 TOTAL INCOME", total_income, border_color=inc_border, bg_color=inc_bg, subtitle=inc_subtitle),
+            unsafe_allow_html=True
+        )
     with col2:
-        st.markdown(generate_metric_card("📋 PLANNED EXPENSES", total_planned), unsafe_allow_html=True)
+        st.markdown(
+            generate_metric_card("📋 PLANNED EXPENSES", total_planned, border_color=plan_border, bg_color=plan_bg, subtitle=plan_subtitle),
+            unsafe_allow_html=True
+        )
 
     col3, col4 = st.columns(2)
 
     with col3:
         st.markdown(generate_metric_card("🧾 ACTUAL EXPENSES", total_actual), unsafe_allow_html=True)
     with col4:
-        st.markdown(generate_metric_card(f"{rem_icon} MONEY REMAINING", money_remaining, rem_color), unsafe_allow_html=True)
+        st.markdown(generate_metric_card(f"{rem_icon} MONEY REMAINING", money_remaining, text_color=rem_color), unsafe_allow_html=True)
 
 
 def render_budget_progress(total_planned, total_actual):
@@ -96,7 +115,7 @@ def render_pie_chart(category_summary):
     ax.set_facecolor("none")
 
     if sizes:
-        colors = ["#29b5e8", "#ff9f43", "#2ed573", "#ff4757", "#a55eea", "#f7b731"]
+        colors = ["#ff4b4b", "#ffa15a", "#f6c915", "#72c472", "#29b5e8", "#ab63fa", "#e56767",]
         wedges, texts, autotexts = ax.pie(
             sizes, 
             autopct="%1.1f%%", 
@@ -146,7 +165,7 @@ def render_actual_over_planned_chart(category_summary):
         y_pos = list(range(len(categories)))
         height = 0.35
         
-        colors = ["#29b5e8", "#ff9f43", "#2ed573", "#ff4757", "#a55eea", "#f7b731"]
+        colors = ["#ff4b4b", "#ffa15a", "#f6c915", "#72c472", "#29b5e8", "#ab63fa", "#e56767",]
         bar_colors = [colors[i % len(colors)] for i in range(len(categories))]
         
         y_pos_planned = [y - height/2 for y in y_pos]
@@ -168,9 +187,19 @@ def render_actual_over_planned_chart(category_summary):
             Patch(facecolor='#a3a3a3', label='Planned'),
             Patch(facecolor='#a3a3a3', alpha=0.5, edgecolor='white', label='Actual')
         ]
-        ax.legend(handles=legend_elements, facecolor="#363531", edgecolor="#5e5c56", labelcolor="white", fontsize=12, loc="lower right")
+        
+        ax.legend(
+            handles=legend_elements, 
+            facecolor="#363531", 
+            edgecolor="#5e5c56", 
+            labelcolor="white", 
+            fontsize=12, 
+            loc="upper right", 
+            bbox_to_anchor=(0.0, -0.05),
+            ncol=1
+        )
     else:
-        ax.text(0.5, 0.5, "No data available", ha="center", va="center", color="white", fontsize=13)
+        ax.text(0.5, 0.5, "No budget and expense data yet.", ha="center", va="center", color="white", fontsize=13)
         ax.axis("off")
 
     plt.tight_layout()
@@ -200,7 +229,7 @@ def render_budget_breakdown(category_summary):
     st.header("Budget Breakdown", text_alignment="center")
 
     if not category_summary:
-        st.info("No data available.")
+        st.info("No budget and expense data yet.")
         return
 
     with st.container(border=True):
@@ -264,4 +293,6 @@ def render_dashboard(selected_month):
                 st.pyplot(fig_barh, use_container_width=True)
                 plt.close(fig_barh)
             else:
-                st.info("No data available.")
+                st.info("No budget and expense data yet.")
+
+    st.write("---")
