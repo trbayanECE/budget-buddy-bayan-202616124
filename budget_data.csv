@@ -6,13 +6,6 @@ January 2026,Allowance,15000.0,Savings,100.0
 January 2026,Allowance,15000.0,Entertainment,100.0
 January 2026,Allowance,15000.0,Miscellaneous,100.0
 January 2026,Allowance,15000.0,Health,100.0
-January 2027,Allowance,15000.0,Food,100.0
-January 2027,Allowance,15000.0,Transportation,100.0
-January 2027,Allowance,15000.0,Utilities,100.0
-January 2027,Allowance,15000.0,Savings,100.0
-January 2027,Allowance,15000.0,Entertainment,100.0
-January 2027,Allowance,15000.0,Miscellaneous,100.0
-January 2027,Allowance,15000.0,Health,100.0
 February 2027,Allowance,25000.0,Food,4200.0
 February 2027,Allowance,25000.0,Transportation,2000.0
 February 2027,Allowance,25000.0,Utilities,1500.0
@@ -20,3 +13,10 @@ February 2027,Allowance,25000.0,Savings,3500.0
 February 2027,Allowance,25000.0,Entertainment,1000.0
 February 2027,Allowance,25000.0,Miscellaneous,800.0
 February 2027,Allowance,25000.0,Health,200.0
+January 2027,Allowance::15000.0,15000.0,Food,300.0
+January 2027,Allowance::15000.0,15000.0,Transportation,100.0
+January 2027,Allowance::15000.0,15000.0,Utilities,100.0
+January 2027,Allowance::15000.0,15000.0,Savings,100.0
+January 2027,Allowance::15000.0,15000.0,Entertainment,100.0
+January 2027,Allowance::15000.0,15000.0,Miscellaneous,100.0
+

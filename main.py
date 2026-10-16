@@ -6,7 +6,7 @@ import expense_page
 def main():
     st.set_page_config(page_title="Budget Buddy", page_icon="💸", layout="wide")
 
-    st.logo("budgetbuddy_logo.png", size="large", icon_image="budgetbuddy_icon.png") 
+    st.logo("assets/budgetbuddy_logo.png", size="large", icon_image="assets/budgetbuddy_icon.png") 
 
     st.markdown("""
         <style>
