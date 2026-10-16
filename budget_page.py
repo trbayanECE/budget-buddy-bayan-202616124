@@ -3,9 +3,7 @@ import data_loader
 
 def init_categories():
     if "categories" not in st.session_state:
-        st.session_state.categories = [
-            "Food", "Transportation", "Utilities", "Savings", "Entertainment", "Miscellaneous"
-        ]
+        st.session_state.categories = ["Food", "Transportation", "Utilities", "Savings", "Entertainment", "Miscellaneous"]
         saved_budgets = data_loader.load_budget_data()
         
         if saved_budgets:
@@ -16,33 +14,33 @@ def init_categories():
                     st.session_state.categories.append(cat_name)
                     existing_names.append(cat_name.lower())
 
-def show(selected_month_str=None):
-    init_categories()
-
-    formatted_date = selected_month_str or f"{st.session_state.get('selected_month', 'January')} {st.session_state.get('selected_year', '2027')}"
-    
+def init_incomes(formatted_date, all_budgets):
     income_state_key = f"incomes_{formatted_date}"
     if income_state_key not in st.session_state:
-        all_budgets = data_loader.load_budget_data()
         month_budgets = [b for b in all_budgets if b["month"] == formatted_date] if all_budgets else []
         if month_budgets:
-            seen_incomes = set()
             incomes_list = []
-            for b in month_budgets:
-                inc_tuple = (b["income_source"], b["income"])
-                if inc_tuple not in seen_incomes:
-                    seen_incomes.add(inc_tuple)
-                    incomes_list.append({"source": b["income_source"], "amount": b["income"]})
+            source_str = month_budgets[0].get("income_source", "")
+            
+            if "::" in source_str:
+                for part in source_str.split("||"):
+                    if "::" in part:
+                        s, a = part.split("::")
+                        incomes_list.append({"source": s, "amount": float(a)})
+            else:
+                seen_incomes = set()
+                for b in month_budgets:
+                    inc_tuple = (b["income_source"], b["income"])
+                    if inc_tuple not in seen_incomes:
+                        seen_incomes.add(inc_tuple)
+                        incomes_list.append({"source": b["income_source"], "amount": b["income"]})
+                        
             st.session_state[income_state_key] = incomes_list if incomes_list else [{"source": "Allowance", "amount": 15000.0}]
         else:
             st.session_state[income_state_key] = [{"source": "Allowance", "amount": 15000.0}]
+    return income_state_key
 
-    income_list = st.session_state[income_state_key]
-    all_budgets = data_loader.load_budget_data() or []
-    current_month_budgets = [b for b in all_budgets if b["month"] == formatted_date]
-    planned_map = {b["category"]: b["planned_amount"] for b in current_month_budgets}
-
-    # calculates total prior
+def calculate_totals(formatted_date, income_list, planned_map):
     total_expected_income = 0.0
     for idx, inc in enumerate(income_list):
         amt_key = f"inc_amt_{formatted_date}_{idx}"
@@ -57,70 +55,63 @@ def show(selected_month_str=None):
         temp_planned_total += val
         
     temp_unallocated = total_expected_income - temp_planned_total
-    combined_income_source = ", ".join(list(set(item["source"] for item in income_list))) if income_list else "None"
+    
+    combined_income_source = "||".join([f"{item['source']}::{item['amount']}" for item in income_list]) if income_list else "None"
+    
+    return total_expected_income, temp_planned_total, temp_unallocated, combined_income_source
 
-    st.subheader(f"({formatted_date}) Budget Categories & Planned Expenses", text_alignment="center", divider="rainbow")
-
-    # Summary 
+def display_summary_cards(total_expected_income, temp_planned_total, temp_unallocated):
     col1, col2, col3 = st.columns(3)
 
-    # expected income
     col1.markdown(f"""
         <div style="background-color: #363531; padding: 1rem; border-radius: 0.5rem; border: 1px solid #5e5c56;">
             <div style="font-size: 0.85rem; font-weight: 600; color: #f0f0f0; margin-bottom: 0.5rem;">💸 EXPECTED INCOME</div>
             <div style="font-size: 1.8rem; font-weight: bold; color: #f0f0f0;">₱{total_expected_income:,.2f}</div>
-        </div>
-    """, unsafe_allow_html=True)
+        </div>""", unsafe_allow_html=True)
 
-    # expected expenses
     plan_color = "#e56767" if temp_planned_total > total_expected_income else "#f0f0f0"
     col2.markdown(f"""
         <div style="background-color: #363531; padding: 1rem; border-radius: 0.5rem; border: 1px solid #5e5c56;">
             <div style="font-size: 0.85rem; font-weight: 600; color: {plan_color}; margin-bottom: 0.5rem;">📝 PLANNED EXPENSES</div>
             <div style="font-size: 1.8rem; font-weight: bold; color: {plan_color};">₱{temp_planned_total:,.2f}</div>
-        </div>
-    """, unsafe_allow_html=True)
+        </div>""", unsafe_allow_html=True)
 
-    # unallocated     
     unalloc_color = "#72c472" if temp_unallocated >= 0 else "#e56767"
     unalloc_icon = "✅" if temp_unallocated >= 0 else "⚠️"
     col3.markdown(f"""
         <div style="background-color: #363531; padding: 1rem; border-radius: 0.5rem; border: 1px solid #5e5c56;">
             <div style="font-size: 0.85rem; font-weight: 600; color: {unalloc_color}; margin-bottom: 0.5rem;">{unalloc_icon} UNALLOCATED</div>
             <div style="font-size: 1.8rem; font-weight: bold; color: {unalloc_color};">₱{temp_unallocated:,.2f}</div>
-        </div>
-    """, unsafe_allow_html=True)
+        </div>""", unsafe_allow_html=True)
     
     if temp_unallocated < 0:
         st.error(f"Warning: Your planned expenses exceed your expected income by ₱{abs(temp_unallocated):,.2f}!")
-
     st.write("")
 
-    # budget partition bar colors ADD MORE TJ 
-    colors = ["#4caf50", "#2196f3", "#ff9800", "#9c27b0", "#00bcd4", "#e91e63", "#009688", "#ff5722", ]
-    
-    if total_expected_income > 0:
-        bar_segments = []
-        for idx, cat in enumerate(st.session_state.categories):
-            amt_key = f"budget_amt_{formatted_date}_{idx}"
-            cat_amt = float(st.session_state[amt_key]) if amt_key in st.session_state else float(planned_map.get(cat, 0.0))
-            pct = (cat_amt / total_expected_income) * 100
-            if pct > 0:
-                bar_segments.append(f'<div style="width: {pct:.2f}%; background-color: {colors[idx % len(colors)]}; height: 20px;" title="{cat}: ₱{cat_amt:,.2f} ({pct:.1f}%)"></div>')
+def display_budget_progress_bar(total_expected_income, temp_unallocated, formatted_date, planned_map, colors):
+    if total_expected_income <= 0:
+        return
         
-        if temp_unallocated > 0:
-            unalloc_pct = (temp_unallocated / total_expected_income) * 100
-            bar_segments.append(f'<div style="width: {unalloc_pct:.2f}%; background-color: #5e5c56; height: 20px;" title="Unallocated: ₱{temp_unallocated:,.2f} ({unalloc_pct:.1f}%)"></div>')
-
-        st.markdown(f"""
-        <div style="display: flex; width: 100%; height: 20px; background-color: #363531; border-radius: 5px; overflow: hidden; margin-bottom: 12px; border: 1px solid #5e5c56;">
-            {"".join(bar_segments) if bar_segments else '<div style="width: 100%; background-color: #5e5c56; height: 20px;"></div>'}
-        </div>
-        """, unsafe_allow_html=True)
-
-    st.write("")
+    bar_segments = []
+    for idx, cat in enumerate(st.session_state.categories):
+        amt_key = f"budget_amt_{formatted_date}_{idx}"
+        cat_amt = float(st.session_state[amt_key]) if amt_key in st.session_state else float(planned_map.get(cat, 0.0))
+        pct = (cat_amt / total_expected_income) * 100
+        if pct > 0:
+            bar_segments.append(f'<div style="width: {pct:.2f}%; background-color: {colors[idx % len(colors)]}; height: 20px;" title="{cat}: ₱{cat_amt:,.2f} ({pct:.1f}%)"></div>')
     
-    # Budget buckets list
+    if temp_unallocated > 0:
+        unalloc_pct = (temp_unallocated / total_expected_income) * 100
+        bar_segments.append(f'<div style="width: {unalloc_pct:.2f}%; background-color: #5e5c56; height: 20px;" title="Unallocated: ₱{temp_unallocated:,.2f} ({unalloc_pct:.1f}%)"></div>')
+
+    st.markdown(f"""
+    <div style="display: flex; width: 100%; height: 20px; background-color: #363531; border-radius: 5px; overflow: hidden; margin-bottom: 12px; border: 1px solid #5e5c56;">
+        {"".join(bar_segments) if bar_segments else '<div style="width: 100%; background-color: #5e5c56; height: 20px;"></div>'}
+    </div>
+    """, unsafe_allow_html=True)
+    st.write("")
+
+def manage_budget_categories(formatted_date, planned_map, total_expected_income, colors):
     planned_budget = {}
     indices_to_remove_cat = []
     cat_cols = st.columns(2)
@@ -146,7 +137,6 @@ def show(selected_month_str=None):
                 indices_to_remove_cat.append(i)
 
             cat_pct = (planned_amt / total_expected_income) * 100 if total_expected_income > 0 else 0.0
-            
             st.markdown(f"""
             <div style="width: 100%; background-color: #363531; border-radius: 4px; height: 8px; margin-top: 5px;">
                 <div style="width: {min(cat_pct, 100)}%; background-color: {color}; height: 8px; border-radius: 4px;"></div>
@@ -168,10 +158,11 @@ def show(selected_month_str=None):
                 st.rerun()
             else:
                 st.error("Category name is empty or already exists.")
+                
+    return planned_budget
 
-    # st.write("---")
-
-    # expected income
+def manage_income_sources(formatted_date, income_state_key, income_list):
+    st.write("---")
     st.subheader("Expected Income Sources", text_alignment="center")
     
     indices_to_remove_inc = []
@@ -200,7 +191,8 @@ def show(selected_month_str=None):
                 st.error("Income amount must be greater than 0.")
 
     st.write("---")
-    
+
+def save_budget(formatted_date, all_budgets, planned_budget, combined_income_source, total_expected_income):
     if st.button("Save Budget", type="primary", key=f"save_btn_{formatted_date}"):
         updated_budgets = [b for b in all_budgets if b["month"] != formatted_date]
         for category_name, amt in planned_budget.items():
@@ -213,3 +205,28 @@ def show(selected_month_str=None):
             })
         data_loader.save_budget_data(updated_budgets)
         st.success(f"Budget for {formatted_date} saved successfully!")
+
+
+def show(selected_month_str=None):
+    init_categories()
+    
+    formatted_date = selected_month_str or f"{st.session_state.get('selected_month', 'January')} {st.session_state.get('selected_year', '2027')}"
+    all_budgets = data_loader.load_budget_data() or []
+    
+    income_state_key = init_incomes(formatted_date, all_budgets)
+    income_list = st.session_state[income_state_key]
+    current_month_budgets = [b for b in all_budgets if b["month"] == formatted_date]
+    planned_map = {b["category"]: b["planned_amount"] for b in current_month_budgets}
+
+    total_expected_income, temp_planned_total, temp_unallocated, combined_income_source = calculate_totals(
+        formatted_date, income_list, planned_map
+    )
+    st.header(f"({formatted_date}) Budget Categories & Planned Expenses", text_alignment="center", divider="rainbow")
+    display_summary_cards(total_expected_income, temp_planned_total, temp_unallocated)
+    
+    colors = ["#9c27b0", "#e91e63", "#ff9800", "#4caf50", "#2196f3", "#00bcd4", "#009688", "#ff5722"]
+    display_budget_progress_bar(total_expected_income, temp_unallocated, formatted_date, planned_map, colors)
+    
+    planned_budget = manage_budget_categories(formatted_date, planned_map, total_expected_income, colors)
+    manage_income_sources(formatted_date, income_state_key, income_list)
+    save_budget(formatted_date, all_budgets, planned_budget, combined_income_source, total_expected_income)
